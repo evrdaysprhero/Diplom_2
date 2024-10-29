@@ -13,16 +13,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static io.restassured.RestAssured.given;
-
 @Story("Получение заказов конкретного пользователя")
-public class GetOrderTest {
+public class GetOrderTest extends AbstractApiTest{
     private String password;
     private String email;
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site/";
+        RestAssured.baseURI = URL;
 
         String name = "sprhero" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         password = RandomStringUtils.randomNumeric(5);
@@ -55,13 +53,18 @@ public class GetOrderTest {
     @DisplayName("С авторизацией")
     public void getOrderWithAuthSuccess() {
 
-        List<String> ingredients = List.of("61c0c5a71d1f82001bdaaa73", "61c0c5a71d1f82001bdaaa6e", "61c0c5a71d1f82001bdaaa6c");
+        GetIngredientsResponse ingredients = ApiHelper.getIngredients()
+                .body()
+                .as(GetIngredientsResponse.class);
+
+        List<String> ingredientsList = List.of(ingredients.getData().get(0).get_id(),
+                ingredients.getData().get(1).get_id());
 
         //авторизация
         String accessToken = ApiHelper.authUser(password, email);
 
         //создать заказ
-        MakeOrderRequest order = new MakeOrderRequest(ingredients);
+        MakeOrderRequest order = new MakeOrderRequest(ingredientsList);
         ApiHelper.postOrders(order, accessToken);
 
         //получить заказ
@@ -74,14 +77,12 @@ public class GetOrderTest {
                 .body()
                 .as(GetOrderResponse.class);
         Assert.assertTrue(getOrderResponse.isSuccess());
-        Assert.assertEquals(ingredients, getOrderResponse.getOrders().get(0).getIngredients());
+        Assert.assertEquals(ingredientsList, getOrderResponse.getOrders().get(0).getIngredients());
     }
 
     @After
     public void deleteUser() {
-        String accessToken = ApiHelper.authUser(password, email);
-        given()
-                .header("authorization", accessToken)
-                .delete("/api/auth/user");
+        ApiHelper.deleteUser(password, email);
+
     }
 }

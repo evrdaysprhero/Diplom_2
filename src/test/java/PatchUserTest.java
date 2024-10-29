@@ -1,4 +1,3 @@
-import io.qameta.allure.Step;
 import io.qameta.allure.Story;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
@@ -16,14 +15,14 @@ import java.time.format.DateTimeFormatter;
 import static io.restassured.RestAssured.given;
 
 @Story("Изменение данных пользователя")
-public class PatchUserTest {
+public class PatchUserTest extends AbstractApiTest {
 
     private String password;
     private String email;
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site/";
+        RestAssured.baseURI = URL;
 
         String name = "sprhero" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         password = RandomStringUtils.randomNumeric(5);
@@ -44,7 +43,7 @@ public class PatchUserTest {
 
         //авторизация
         LoginRequest loginRequest = new LoginRequest(password, email);
-        Response responseLogin = LoginTest.postLogin(loginRequest);
+        Response responseLogin = ApiHelper.postLogin(loginRequest);
 
         RegisterResponse registerResponse = responseLogin
                 .body()
@@ -87,13 +86,10 @@ public class PatchUserTest {
     public void deleteUser() {
         String accessToken = ApiHelper.authUser(password, email);
         if(accessToken!=null) {
-            given()
-                    .header("authorization", accessToken)
-                    .delete("/api/auth/user");
+            ApiHelper.deleteUser(password, email);
         } else {
-            given()
-                    .header("authorization", ApiHelper.authUser(password, email + "text"))
-                    .delete("/api/auth/user");
+            ApiHelper.deleteUser(password, email + "text");
+
         }
 
     }

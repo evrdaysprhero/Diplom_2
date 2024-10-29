@@ -14,16 +14,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static io.restassured.RestAssured.given;
-
 @Story("Создание заказа")
-public class MakeOrderTest {
+public class MakeOrderTest extends AbstractApiTest {
     private String password;
     private String email;
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site/";
+        RestAssured.baseURI = URL;
 
         String name = "sprhero" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         password = RandomStringUtils.randomNumeric(5);
@@ -108,9 +106,7 @@ public class MakeOrderTest {
 
     @After
     public void deleteUser() {
-        String accessToken = ApiHelper.authUser(password, email);
-        given()
-                .header("authorization", accessToken)
-                .delete("/api/auth/user");
+        ApiHelper.deleteUser(password, email);
+
     }
 }

@@ -11,17 +11,15 @@ import pojo.RegisterRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import static io.restassured.RestAssured.given;
-
 @Story("Создание пользователя")
-public class RegisterTest {
+public class RegisterTest extends AbstractApiTest {
     private String name;
     private String password;
     private String email;
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site/";
+        RestAssured.baseURI = URL;
 
         name = "sprhero" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         password = RandomStringUtils.randomNumeric(5);
@@ -56,10 +54,8 @@ public class RegisterTest {
 
     @After
     public void deleteUser() {
-        String accessToken = ApiHelper.authUser(password, email);
-        given()
-                .header("authorization", accessToken)
-                .delete("/api/auth/user");
+        ApiHelper.deleteUser(password, email);
+
     }
 
 }

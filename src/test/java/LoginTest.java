@@ -1,4 +1,3 @@
-import io.qameta.allure.Step;
 import io.qameta.allure.Story;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
@@ -13,17 +12,15 @@ import pojo.RegisterRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import static io.restassured.RestAssured.given;
-
 @Story("Логин пользователя")
-public class LoginTest {
+public class LoginTest extends AbstractApiTest {
 
     private String password;
     private String email;
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site/";
+        RestAssured.baseURI = URL;
 
         String name = "sprhero" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         password = RandomStringUtils.randomNumeric(5);
@@ -35,20 +32,12 @@ public class LoginTest {
 
     }
 
-    @Step("Вызов /api/auth/register")
-    public static Response postLogin(LoginRequest loginRequest) {
-        return given()
-                .header("Content-type", "application/json")
-                .body(loginRequest)
-                .post("/api/auth/login");
-    }
-
     @Test
     @DisplayName("логин под существующим пользователем")
     public void loginSuccess() {
 
         LoginRequest loginRequest = new LoginRequest(password, email);
-        Response response = postLogin(loginRequest);
+        Response response = ApiHelper.postLogin(loginRequest);
         ApiHelper.checkResponseCode(response,200);
 
     }
@@ -58,7 +47,7 @@ public class LoginTest {
     public void loginWrongEmailError() {
 
         LoginRequest loginRequest = new LoginRequest(password, email + "text");
-        Response response = postLogin(loginRequest);
+        Response response = ApiHelper.postLogin(loginRequest);
         ApiHelper.checkResponseCode(response,401);
         ApiHelper.checkResponseMessage(response, "email or password are incorrect");
 
@@ -69,7 +58,7 @@ public class LoginTest {
     public void loginWrongPasswordError() {
 
         LoginRequest loginRequest = new LoginRequest(password + "text", email);
-        Response response = postLogin(loginRequest);
+        Response response = ApiHelper.postLogin(loginRequest);
         ApiHelper.checkResponseCode(response,401);
         ApiHelper.checkResponseMessage(response, "email or password are incorrect");
 
@@ -80,7 +69,7 @@ public class LoginTest {
     public void loginWrongEmailAndPasswordError() {
 
         LoginRequest loginRequest = new LoginRequest(password + "text", email + "text");
-        Response response = postLogin(loginRequest);
+        Response response = ApiHelper.postLogin(loginRequest);
         ApiHelper.checkResponseCode(response,401);
         ApiHelper.checkResponseMessage(response, "email or password are incorrect");
 
@@ -88,9 +77,7 @@ public class LoginTest {
 
     @After
     public void deleteUser() {
-        String accessToken = ApiHelper.authUser(password, email);
-        given()
-                .header("authorization", accessToken)
-                .delete("/api/auth/user");
+        ApiHelper.deleteUser(password, email);
+
     }
 }
