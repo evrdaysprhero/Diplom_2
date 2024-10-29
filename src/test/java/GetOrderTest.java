@@ -1,4 +1,3 @@
-import io.qameta.allure.Step;
 import io.qameta.allure.Story;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
@@ -31,30 +30,15 @@ public class GetOrderTest {
 
         //создать пользователя
         RegisterRequest registerRequest = new RegisterRequest(name, password, email);
-        RegisterTest.postRegister(registerRequest);
+        ApiHelper.postRegister(registerRequest);
 
-    }
-
-    @Step("Вызов /api/orders с авторизацией")
-    public static Response getOrders(String accessToken) {
-        return given()
-                .header("Content-type", "application/json")
-                .header("authorization", accessToken)
-                .get("/api/orders");
-    }
-
-    @Step("Вызов /api/orders без авторизации")
-    public static Response getOrders() {
-        return given()
-                .header("Content-type", "application/json")
-                .get("/api/orders");
     }
 
     @Test
     @DisplayName("Без авторизации")
     public void getOrderNoAuthFail() {
 
-        Response response = getOrders();
+        Response response = ApiHelper.getOrders();
         response.then()
                 .assertThat()
                 .statusCode(401);
@@ -74,14 +58,14 @@ public class GetOrderTest {
         List<String> ingredients = List.of("61c0c5a71d1f82001bdaaa73", "61c0c5a71d1f82001bdaaa6e", "61c0c5a71d1f82001bdaaa6c");
 
         //авторизация
-        String accessToken = MakeOrderTest.authUser(password, email);
+        String accessToken = ApiHelper.authUser(password, email);
 
         //создать заказ
         MakeOrderRequest order = new MakeOrderRequest(ingredients);
-        MakeOrderTest.postOrders(order, accessToken);
+        ApiHelper.postOrders(order, accessToken);
 
         //получить заказ
-        Response response = getOrders(accessToken);
+        Response response = ApiHelper.getOrders(accessToken);
         response.then()
                 .assertThat()
                 .statusCode(200);
@@ -95,7 +79,7 @@ public class GetOrderTest {
 
     @After
     public void deleteUser() {
-        String accessToken = MakeOrderTest.authUser(password, email);
+        String accessToken = ApiHelper.authUser(password, email);
         given()
                 .header("authorization", accessToken)
                 .delete("/api/auth/user");

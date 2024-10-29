@@ -1,4 +1,5 @@
 import io.qameta.allure.Feature;
+import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.junit.Before;
@@ -44,13 +45,14 @@ public class RegisterParamsTest {
     }
 
     @Test
+    @DisplayName("Не заполнено одно из обязательных полей - ошибка 403")
     public void createNoRequiredFieldFail() {
 
         RegisterRequest registerRequest = new RegisterRequest(name, password, email);
 
-        Response response = RegisterTest.postRegister(registerRequest);
-        RegisterTest.checkResponseCode(response,403);
-        RegisterTest.checkResponseMessage(response, "Email, password and name are required fields");
+        Response response = ApiHelper.postRegister(registerRequest);
+        ApiHelper.checkResponseCode(response,403);
+        ApiHelper.checkResponseMessage(response, "Email, password and name are required fields");
 
     }
 
