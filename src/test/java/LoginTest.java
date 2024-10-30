@@ -1,31 +1,26 @@
-import io.qameta.allure.Step;
 import io.qameta.allure.Story;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import pojo.LoginRequest;
 import pojo.RegisterRequest;
-import pojo.RegisterResponse;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import static io.restassured.RestAssured.given;
-
 @Story("Логин пользователя")
-public class LoginTest {
+public class LoginTest extends AbstractApiTest {
 
     private String password;
     private String email;
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site/";
+        RestAssured.baseURI = URL;
 
         String name = "sprhero" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         password = RandomStringUtils.randomNumeric(5);
@@ -33,30 +28,8 @@ public class LoginTest {
 
         //создать пользователя
         RegisterRequest registerRequest = new RegisterRequest(name, password, email);
-        RegisterTest.postRegister(registerRequest);
+        ApiHelper.postRegister(registerRequest);
 
-    }
-
-    @Step("Вызов /api/auth/register")
-    public static Response postLogin(LoginRequest loginRequest) {
-        return given()
-                .header("Content-type", "application/json")
-                .body(loginRequest)
-                .post("/api/auth/login");
-    }
-
-    @Step("Проверка кода ответа")
-    public void checkResponseCode(Response response, Integer expCode) {
-        response.then().assertThat()
-                .statusCode(expCode);
-    }
-
-    @Step("Проверка сообщения об ошибке")
-    public static void checkResponseMessage(Response response, String expMsg) {
-        RegisterResponse registerResponse = response
-                .body()
-                .as(RegisterResponse.class);
-        Assert.assertEquals(expMsg, registerResponse.getMessage());
     }
 
     @Test
@@ -64,8 +37,8 @@ public class LoginTest {
     public void loginSuccess() {
 
         LoginRequest loginRequest = new LoginRequest(password, email);
-        Response response = postLogin(loginRequest);
-        checkResponseCode(response,200);
+        Response response = ApiHelper.postLogin(loginRequest);
+        ApiHelper.checkResponseCode(response,200);
 
     }
 
@@ -74,9 +47,9 @@ public class LoginTest {
     public void loginWrongEmailError() {
 
         LoginRequest loginRequest = new LoginRequest(password, email + "text");
-        Response response = postLogin(loginRequest);
-        checkResponseCode(response,401);
-        checkResponseMessage(response, "email or password are incorrect");
+        Response response = ApiHelper.postLogin(loginRequest);
+        ApiHelper.checkResponseCode(response,401);
+        ApiHelper.checkResponseMessage(response, "email or password are incorrect");
 
     }
 
@@ -85,9 +58,9 @@ public class LoginTest {
     public void loginWrongPasswordError() {
 
         LoginRequest loginRequest = new LoginRequest(password + "text", email);
-        Response response = postLogin(loginRequest);
-        checkResponseCode(response,401);
-        checkResponseMessage(response, "email or password are incorrect");
+        Response response = ApiHelper.postLogin(loginRequest);
+        ApiHelper.checkResponseCode(response,401);
+        ApiHelper.checkResponseMessage(response, "email or password are incorrect");
 
     }
 
@@ -96,17 +69,15 @@ public class LoginTest {
     public void loginWrongEmailAndPasswordError() {
 
         LoginRequest loginRequest = new LoginRequest(password + "text", email + "text");
-        Response response = postLogin(loginRequest);
-        checkResponseCode(response,401);
-        checkResponseMessage(response, "email or password are incorrect");
+        Response response = ApiHelper.postLogin(loginRequest);
+        ApiHelper.checkResponseCode(response,401);
+        ApiHelper.checkResponseMessage(response, "email or password are incorrect");
 
     }
 
     @After
     public void deleteUser() {
-        String accessToken = MakeOrderTest.authUser(password, email);
-        given()
-                .header("authorization", accessToken)
-                .delete("/api/auth/user");
+        ApiHelper.deleteUser(password, email);
+
     }
 }

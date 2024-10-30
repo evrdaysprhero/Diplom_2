@@ -1,4 +1,3 @@
-import io.qameta.allure.Step;
 import io.qameta.allure.Story;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
@@ -16,14 +15,14 @@ import java.time.format.DateTimeFormatter;
 import static io.restassured.RestAssured.given;
 
 @Story("Изменение данных пользователя")
-public class PatchUserTest {
+public class PatchUserTest extends AbstractApiTest {
 
     private String password;
     private String email;
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site/";
+        RestAssured.baseURI = URL;
 
         String name = "sprhero" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         password = RandomStringUtils.randomNumeric(5);
@@ -31,25 +30,8 @@ public class PatchUserTest {
 
         //создать пользователя
         RegisterRequest registerRequest = new RegisterRequest(name, password, email);
-        RegisterTest.postRegister(registerRequest);
+        ApiHelper.postRegister(registerRequest);
 
-    }
-
-    @Step("Обновление данных. Вызов /api/auth/user")
-    public static Response patchUser(User user, String accessToken) {
-        return given()
-                .header("Content-type", "application/json")
-                .header("authorization", accessToken)
-                .body(user)
-                .patch("/api/auth/user");
-    }
-
-    @Step("Получение данных. Вызов /api/auth/user")
-    public static Response getUser(String accessToken) {
-        return given()
-                .header("Content-type", "application/json")
-                .header("authorization", accessToken)
-                .get("/api/auth/user");
     }
 
     @Test
@@ -61,7 +43,7 @@ public class PatchUserTest {
 
         //авторизация
         LoginRequest loginRequest = new LoginRequest(password, email);
-        Response responseLogin = LoginTest.postLogin(loginRequest);
+        Response responseLogin = ApiHelper.postLogin(loginRequest);
 
         RegisterResponse registerResponse = responseLogin
                 .body()
@@ -70,13 +52,13 @@ public class PatchUserTest {
 
         //обновляем данные
         User patchRequest = new User(newEmail, newName);
-        patchUser(patchRequest, accessToken)
+        ApiHelper.patchUser(patchRequest, accessToken)
                 .then()
                 .assertThat()
                 .statusCode(200);
 
         //проверяем, что данные обновились
-        GetUserResponse getUserResponse = getUser(accessToken)
+        GetUserResponse getUserResponse = ApiHelper.getUser(accessToken)
                 .body()
                 .as(GetUserResponse.class);
         Assert.assertEquals("Email не обновился", newEmail, getUserResponse.getUser().getEmail());
@@ -102,15 +84,12 @@ public class PatchUserTest {
 
     @After
     public void deleteUser() {
-        String accessToken = MakeOrderTest.authUser(password, email);
+        String accessToken = ApiHelper.authUser(password, email);
         if(accessToken!=null) {
-            given()
-                    .header("authorization", accessToken)
-                    .delete("/api/auth/user");
+            ApiHelper.deleteUser(password, email);
         } else {
-            given()
-                    .header("authorization", MakeOrderTest.authUser(password, email + "text"))
-                    .delete("/api/auth/user");
+            ApiHelper.deleteUser(password, email + "text");
+
         }
 
     }

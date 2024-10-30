@@ -1,4 +1,5 @@
 import io.qameta.allure.Feature;
+import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.junit.Before;
@@ -9,7 +10,7 @@ import pojo.RegisterRequest;
 
 @RunWith(Parameterized.class)
 @Feature(value = "Не заполнено одно из обязательных полей")
-public class RegisterParamsTest {
+public class RegisterParamsTest extends AbstractApiTest {
 
     private String name;
     private String password;
@@ -40,17 +41,18 @@ public class RegisterParamsTest {
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site/";
+        RestAssured.baseURI = URL;
     }
 
     @Test
+    @DisplayName("Не заполнено одно из обязательных полей - ошибка 403")
     public void createNoRequiredFieldFail() {
 
         RegisterRequest registerRequest = new RegisterRequest(name, password, email);
 
-        Response response = RegisterTest.postRegister(registerRequest);
-        RegisterTest.checkResponseCode(response,403);
-        RegisterTest.checkResponseMessage(response, "Email, password and name are required fields");
+        Response response = ApiHelper.postRegister(registerRequest);
+        ApiHelper.checkResponseCode(response,403);
+        ApiHelper.checkResponseMessage(response, "Email, password and name are required fields");
 
     }
 

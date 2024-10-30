@@ -14,16 +14,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static io.restassured.RestAssured.given;
-
 @Story("Создание заказа")
-public class MakeOrderTest {
+public class MakeOrderTest extends AbstractApiTest {
     private String password;
     private String email;
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site/";
+        RestAssured.baseURI = URL;
 
         String name = "sprhero" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         password = RandomStringUtils.randomNumeric(5);
@@ -31,37 +29,8 @@ public class MakeOrderTest {
 
         //создать пользователя
         RegisterRequest registerRequest = new RegisterRequest(name, password, email);
-        RegisterTest.postRegister(registerRequest);
+        ApiHelper.postRegister(registerRequest);
 
-    }
-
-    @Step("Авторизоваться")
-    public static String authUser(String password, String email) {
-        LoginRequest loginRequest = new LoginRequest(password, email);
-
-        RegisterResponse registerResponse =  LoginTest
-                .postLogin(loginRequest)
-                .body()
-                .as(RegisterResponse.class);
-
-        return registerResponse.getAccessToken();
-    }
-
-    @Step("Вызов /api/orders с авторизацией")
-    public static Response postOrders(MakeOrderRequest order, String accessToken) {
-        return given()
-                .header("Content-type", "application/json")
-                .header("authorization", accessToken)
-                .body(order)
-                .post("/api/orders");
-    }
-
-    @Step("Вызов /api/orders без авторизации")
-    public static Response postOrders(MakeOrderRequest order) {
-        return given()
-                .header("Content-type", "application/json")
-                .body(order)
-                .post("/api/orders");
     }
 
     @Step("Проверка кода ответа")
@@ -75,11 +44,11 @@ public class MakeOrderTest {
     public void makeOrderWithAuthSuccess() {
 
         //авторизация
-        String accessToken = authUser(password, email);
+        String accessToken = ApiHelper.authUser(password, email);
 
         //создание заказа
         MakeOrderRequest order = new MakeOrderRequest(List.of("61c0c5a71d1f82001bdaaa73", "61c0c5a71d1f82001bdaaa6e", "61c0c5a71d1f82001bdaaa6c"));
-        Response response = postOrders(order, accessToken);
+        Response response = ApiHelper.postOrders(order, accessToken);
         checkResponseCode(response, 200);
 
         //проверка
@@ -96,7 +65,7 @@ public class MakeOrderTest {
 
         //создание заказа
         MakeOrderRequest order = new MakeOrderRequest(List.of("61c0c5a71d1f82001bdaaa73", "61c0c5a71d1f82001bdaaa6e", "61c0c5a71d1f82001bdaaa6c"));
-        Response response = postOrders(order);
+        Response response = ApiHelper.postOrders(order);
         checkResponseCode(response, 200);
 
         //проверка
@@ -113,7 +82,7 @@ public class MakeOrderTest {
 
         //создание заказа
         MakeOrderRequest order = new MakeOrderRequest(null);
-        Response response = postOrders(order);
+        Response response = ApiHelper.postOrders(order);
         checkResponseCode(response, 400);
 
         //проверка
@@ -130,16 +99,14 @@ public class MakeOrderTest {
 
         //создание заказа
         MakeOrderRequest order = new MakeOrderRequest(List.of("61c0c5a71d1f82001bdaaa73", "61c0c5a71d1f82001bdaaa6e", "0000"));
-        Response response = postOrders(order);
+        Response response = ApiHelper.postOrders(order);
         checkResponseCode(response, 500);
 
     }
 
     @After
     public void deleteUser() {
-        String accessToken = MakeOrderTest.authUser(password, email);
-        given()
-                .header("authorization", accessToken)
-                .delete("/api/auth/user");
+        ApiHelper.deleteUser(password, email);
+
     }
 }
